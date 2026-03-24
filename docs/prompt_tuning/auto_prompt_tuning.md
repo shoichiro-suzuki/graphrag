@@ -89,3 +89,81 @@ summarize_descriptions:
 community_reports:
   prompt: "prompts/community_report.txt"
 ```
+
+---
+
+# 日本語訳
+
+# 自動プロンプト調整
+
+GraphRAG には、知識グラフ生成のためのドメイン適応型プロンプトを作成する機能があります。この手順は任意ですが、インデックス実行でより良い結果を得るために、実行を強く推奨します。
+
+これらのプロンプトは、入力データを読み込み、text unit に分割し、その後いくつかの LLM 呼び出しとテンプレート置換を行って生成されます。スクリプトのデフォルト値を使うことを推奨しますが、このページでは、さらに掘り下げて調整したい場合の詳細も説明します。
+
+## 前提条件
+
+自動調整を実行する前に、`graphrag init` コマンドでワークスペースを初期化しておいてください。これにより、必要な設定ファイルとデフォルトのプロンプトが作成されます。初期化の詳細は [Init ドキュメント](../config/init.md) を参照してください。
+
+## 使い方
+
+コマンドラインから、次のようにメインスクリプトを実行できます。
+
+```bash
+graphrag prompt-tune [--root ROOT] [--domain DOMAIN]  [--selection-method METHOD] [--limit LIMIT] [--language LANGUAGE] \
+[--max-tokens MAX_TOKENS] [--chunk-size CHUNK_SIZE] [--n-subset-max N_SUBSET_MAX] [--k K] \
+[--min-examples-required MIN_EXAMPLES_REQUIRED] [--discover-entity-types] [--output OUTPUT]
+```
+
+## コマンドラインオプション
+
+- `--root` (省略可): 設定ファイル (`settings.yaml`) を含むプロジェクトディレクトリへのパスです。既定値はカレントディレクトリです。
+- `--domain` (省略可): `space science`、`microbiology`、`environmental news` のような、入力データの分野を指定します。空欄の場合は、入力データから推定されます。
+- `--selection-method` (省略可): 文書の選択方法です。`all`、`random`、`auto`、`top` が使えます。既定値は `random` です。
+- `--limit` (省略可): `random` または `top` の選択方法で読み込む text unit 数の上限です。既定値は 15 です。
+- `--language` (省略可): 入力処理で使う言語です。入力と異なる場合、LLM が翻訳します。既定値は `""` で、入力から自動検出されます。
+- `--max-tokens` (省略可): プロンプト生成の最大トークン数です。既定値は 2000 です。
+- `--chunk-size` (省略可): 文書から text unit を生成する際のトークン単位のサイズです。既定値は 200 です。
+- `--n-subset-max` (省略可): `auto` 選択時に埋め込む text chunk の数です。既定値は 300 です。
+- `--k` (省略可): `auto` 選択時に重心近傍として選ぶ文書数です。既定値は 15 です。
+- `--min-examples-required` (省略可): entity extraction プロンプトに必要な最小サンプル数です。既定値は 2 です。
+- `--discover-entity-types` (省略可): LLM に entity type を自動発見させるかどうかを指定します。データの話題が多岐にわたる場合や、内容が非常にランダムな場合に推奨します。
+- `--output` (省略可): 生成したプロンプトを保存するフォルダです。既定値は `prompts` です。
+
+## 使用例
+
+```bash
+python -m graphrag prompt-tune --root /path/to/project --domain "environmental news" \
+--selection-method random --limit 10 --language English --max-tokens 2048 --chunk-size 256 --min-examples-required 3 \
+--no-discover-entity-types --output /path/to/output
+```
+
+または、最小構成で実行することもできます。こちらが推奨です。
+
+```bash
+python -m graphrag prompt-tune --root /path/to/project --no-discover-entity-types
+```
+
+## 文書選択方法
+
+自動調整機能は、入力データを読み込んだあと、chunk size パラメータで指定したサイズの text unit に分割します。
+その後、次のいずれかの選択方法で、プロンプト生成に使うサンプルを選びます。
+
+- `random`: text unit をランダムに選びます。既定値であり、推奨される方法です。
+- `top`: 先頭から n 個の text unit を選びます。
+- `all`: すべての text unit を使います。小規模データセットでのみ使用してください。通常は推奨しません。
+- `auto`: text unit を低次元空間に埋め込み、重心に最も近い k 個を選びます。大規模データセットから代表的なサンプルを選ぶときに有効です。
+
+## 設定の更新
+
+自動調整を実行したあとは、生成された新しいプロンプトをインデックス実行で使うために、次の設定値を更新してください。以下では既定の `prompts` パスを使っていますが、必要に応じて実際の出力先に合わせてください。
+
+```yaml
+extract_graph:
+  prompt: "prompts/extract_graph.txt"
+
+summarize_descriptions:
+  prompt: "prompts/summarize_descriptions.txt"
+
+community_reports:
+  prompt: "prompts/community_report.txt"
+```

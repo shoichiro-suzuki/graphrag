@@ -131,3 +131,141 @@ Please refer to [Query Engine](query/overview.md) docs for detailed information 
 - To learn more about Initialization, refer to the [Initialization documentation](config/init.md).
 - For more details about using the CLI, refer to the [CLI documentation](cli.md).
 - Check out our [visualization guide](visualization_guide.md) for a more interactive experience in debugging and exploring the knowledge graph.
+
+---
+
+# 日本語訳
+
+# Getting Started
+
+⚠️ GraphRAG は多くの LLM リソースを消費する可能性があります。システムの動作を理解するまでは、このチュートリアル用データセットから始めることを強く推奨します。大きな indexing を実行する前に、まず高速で低コストなモデルを試すことを検討してください。
+
+## 要件
+
+[Python 3.10-3.12](https://www.python.org/downloads/)
+
+以下は、[pypi](https://pypi.org/project/graphrag/) からインストールしたあと、コマンドラインで GraphRAG を使うための、シンプルな end-to-end の例です。
+
+この例では、テキストを index し、その index 済みデータを使って文書に関する質問に答える方法を示します。
+
+## GraphRAG のインストール
+
+まず、`graphrag` をインストールするためのプロジェクト領域と Python の仮想環境を作成します。
+
+### プロジェクト領域の作成
+
+```bash
+mkdir graphrag_quickstart
+cd graphrag_quickstart
+python -m venv .venv
+```
+
+### Python 仮想環境の有効化 - Unix/MacOS
+
+```bash
+source .venv/bin/activate
+```
+
+### Python 仮想環境の有効化 - Windows
+
+```bash
+.venv\Scripts\activate
+```
+
+### GraphRAG のインストール
+
+```bash
+python -m pip install graphrag
+```
+
+### GraphRAG の初期化
+
+ワークスペースを初期化するには、まず `graphrag init` コマンドを実行します。
+
+```sh
+graphrag init
+```
+
+プロンプトが表示されたら、設定で使いたい既定の chat model と embedding model を指定してください。
+
+これにより、現在のディレクトリに `.env`、`settings.yaml`、`input` ディレクトリの 3 つが作成されます。
+
+- `input` - `graphrag` で処理するテキストファイルの置き場所です。
+- `.env` - GraphRAG pipeline の実行に必要な環境変数を含みます。ファイルを確認すると、`GRAPHRAG_API_KEY=<API_KEY>` という 1 つの環境変数が定義されているはずです。`<API_KEY>` を、ご自身の OpenAI か Azure の API key に置き換えてください。
+- `settings.yaml` - pipeline の設定を含みます。このファイルを編集すると、pipeline の設定を変更できます。
+
+### サンプルテキストのダウンロード
+
+Charles Dickens の *A Christmas Carol* を、信頼できるソースから入手します。
+
+```sh
+curl https://www.gutenberg.org/cache/epub/24022/pg24022.txt -o ./input/book.txt
+```
+
+## ワークスペース変数の設定
+
+### OpenAI を使う場合
+
+OpenAI モードで実行する場合は、`.env` ファイルの `GRAPHRAG_API_KEY` の値を、OpenAI API key に更新するだけで構いません。
+
+### Azure OpenAI を使う場合
+
+API key の設定に加えて、Azure OpenAI を使う場合は `settings.yaml` に以下の変数を設定してください。該当箇所は `models:` の root 設定を探すと見つかります。chat endpoint 用と embeddings endpoint 用の 2 セクションがあるはずです。以下は chat model 設定に追加する例です。
+
+```yaml
+type: chat
+model_provider: azure
+model: gpt-4.1
+deployment_name: <AZURE_DEPLOYMENT_NAME>
+api_base: https://<instance>.openai.azure.com
+api_version: 2024-02-15-preview # You can customize this for other versions
+```
+
+#### Azure で Managed Auth を使う場合
+
+managed auth を使うには、model config の `auth_type` を編集し、`api_key` 行を削除します。
+
+```yaml
+auth_type: azure_managed_identity # Default auth_type is is api_key
+```
+
+また、[az login](https://learn.microsoft.com/en-us/cli/azure/authenticate-azure-cli) でログインし、endpoint のある subscription を選択する必要があります。
+
+## Index
+
+それでは、index を実行できます。
+
+```sh
+graphrag index
+```
+
+![pipeline executing from the CLI](img/pipeline-running.png)
+
+この処理には通常、数分かかります。pipeline が完了すると、`./output` フォルダが新しく作成され、その中に一連の parquet ファイルが出力されます。
+
+# Query
+
+それでは、このデータセットに質問してみましょう。
+
+以下は、Global search を使って高レベルの質問をする例です。
+
+```sh
+graphrag query "What are the top themes in this story?"
+```
+
+以下は、Local search を使って特定の登場人物についてより具体的な質問をする例です。
+
+```sh
+graphrag query \
+"Who is Scrooge and what are his main relationships?" \
+--method local
+```
+
+Indexer の実行後に、データから意味のある洞察を引き出すために Local / Global search をどう活用するかについては、[Query Engine](query/overview.md) のドキュメントを参照してください。
+
+# さらに進む
+
+- GraphRAG の設定の詳細は、[configuration documentation](config/overview.md) を参照してください。
+- Initialization の詳細は、[Initialization documentation](config/init.md) を参照してください。
+- CLI の使い方の詳細は、[CLI documentation](cli.md) を参照してください。
+- 知識グラフのデバッグや探索を、より対話的に行うには [visualization guide](visualization_guide.md) を参照してください。

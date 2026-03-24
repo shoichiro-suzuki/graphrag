@@ -73,3 +73,87 @@ Make sure llvm-9 and llvm-9-dev are installed:
 and then in your bashrc, add
 
 `export LLVM_CONFIG=/usr/bin/llvm-config-9`
+
+---
+
+# 日本語訳
+
+# 開発ガイド
+
+## 要件
+
+| 名前 | インストール | 目的 |
+| --- | --- | --- |
+| Python 3.10-3.12 | [Download](https://www.python.org/downloads/) | このライブラリは Python ベースです。 |
+| uv | [Instructions](https://docs.astral.sh/uv/) | uv は Python コードベースでのパッケージ管理と virtualenv 管理に使います。 |
+
+## はじめに
+
+### 依存関係のインストール
+
+```sh
+# install python dependencies
+uv sync --all-packages
+```
+
+### Indexing Engine の実行
+
+```sh
+uv run poe index <...args>
+```
+
+### Query の実行
+
+```sh
+uv run poe query <...args>
+```
+
+## Azurite
+
+一部の unit test と smoke test では、Azure リソースを模擬するために Azurite を使います。次のコマンドで起動できます。
+
+```sh
+./scripts/start-azurite.sh
+```
+
+あるいは、すでにグローバルにインストールされていれば、ターミナルで `azurite` を実行するだけでも構いません。Azurite のインストール方法や使い方の詳細は [Azurite documentation](https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azurite) を参照してください。
+
+## ライフサイクルスクリプト
+
+この Python パッケージは、依存関係の管理に uv を、ビルドスクリプトの管理に [poethepoet](https://pypi.org/project/poethepoet/) を使っています。
+
+利用可能なスクリプトは次のとおりです。
+
+- `uv run poe index` - Indexing CLI を実行します。
+- `uv run poe query` - Query CLI を実行します。
+- `uv build` - wheel ファイルやその他の配布用成果物をビルドします。
+- `uv run poe test` - すべてのテストを実行します。
+- `uv run poe test_unit` - unit test を実行します。
+- `uv run poe test_integration` - integration test を実行します。
+- `uv run poe test_smoke` - smoke test を実行します。
+- `uv run poe test_verbs` - 基本 workflow のテストを実行します。
+- `uv run poe check` - パッケージ全体に対して静的チェックを実行します。内容は次のとおりです。
+  - formatting
+  - documentation formatting
+  - linting
+  - security patterns
+  - type-checking
+- `uv run poe fix` - 利用可能な自動修正を適用します。通常は formatting 修正です。
+- `uv run poe fix_unsafe` - unsafe になりうるものも含め、利用可能な自動修正を適用します。
+- `uv run poe format` - パッケージ全体に formatter を明示的に実行します。
+
+## トラブルシューティング
+
+### `uv install` 実行時に `"RuntimeError: llvm-config failed executing, please point LLVM_CONFIG to the path for llvm-config"` が出る場合
+
+`llvm-9` と `llvm-9-dev` がインストールされていることを確認してください。
+
+```sh
+sudo apt-get install llvm-9 llvm-9-dev
+```
+
+そのうえで、`bashrc` に次を追加してください。
+
+```sh
+export LLVM_CONFIG=/usr/bin/llvm-config-9
+```

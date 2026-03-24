@@ -403,3 +403,119 @@ These are the settings used for Leiden hierarchical clustering of the graph to c
 - `embedding_model_id` **str** - Name of the model definition to use for Embedding calls.
 - `k` **int** - Number of text units to retrieve from the vector store for context building.
 - `max_context_tokens` **int** - The maximum context size to create, in tokens.
+
+---
+
+# 日本語訳
+
+# GraphRAG のデフォルト設定モード
+
+このページでは、`settings.yml` または `settings.json` を使って GraphRAG を設定する方法を説明します。`.env` ファイルが同じ場所にあれば、それも読み込まれ、設定ファイル内で `${ENV_VAR}` のように環境変数を参照できます。`graphrag init` では既定で YAML が作成されますが、必要なら JSON 形式でも構いません。
+
+多くの設定値には既定値があります。すべてをこのページに重複して書くのではなく、必要に応じて [コード内の定数](https://github.com/microsoft/graphrag/blob/main/graphrag/config/defaults.py) を参照してください。
+
+## Language Model Setup
+
+### models
+
+これは、completion model 設定と embedding model 設定をそれぞれ持つ dict の集合です。各 dict のキーは、他の場所でモデルを参照するときに使います。これにより、必要な数だけモデルを定義し、workflow ごとに個別に参照できます。
+
+例:
+
+```yml
+completion_models:
+  default_completion_model:
+    model_provider: openai
+    model: gpt-4.1
+    auth_method: api_key
+    api_key: ${GRAPHRAG_API_KEY}
+
+embedding_models:
+  default_embedding_model:
+    model_provider: openai
+    model: text-embedding-3-large
+    auth_method: api_key
+    api_key: ${GRAPHRAG_API_KEY}
+```
+
+GraphRAG は [LiteLLM](https://docs.litellm.ai/) を使って言語モデルを呼び出します。`model_provider` と `model` の組み合わせで、OpenAI 以外のプロバイダも含め、幅広いモデルを扱えます。
+
+## Input Files and Chunking
+
+### input
+
+このパイプラインは、`.csv`、`.txt`、`.json` を入力場所から取り込めます。詳しくは [inputs page](../index/inputs.md) を参照してください。
+
+### chunking
+
+これらの設定は、文書を text chunk に分割する方法を制御します。大きな文書は 1 つの context window に収まらないことがあるためです。また、graph extraction の精度にも影響します。`metadata` 設定を使うと、文書メタデータを各 chunk に複製できます。
+
+## Outputs and Storage
+
+### output
+
+パイプラインが出力テーブルを保存するストレージを制御します。
+
+### update_output_storage
+
+増分 indexing 用の二次出力先を指定します。元の出力を残したいときに使います。
+
+### cache
+
+LLM 呼び出し結果を保存するキャッシュ機構を制御します。再実行時の高速化に使われます。
+
+### reporting
+
+イベントやエラーメッセージの出力方法を制御します。既定では output ディレクトリのファイルに書きますが、Azure Blob Storage にも書けます。
+
+### vector_store
+
+システム全体のベクトルをどこに保存するかを決めます。既定は LanceDB です。ここでは、text embedding などの個別ストア設定を識別するキーを持つ dict になっています。
+
+対応する embedding 名は次のとおりです。
+
+- `text_unit_text`
+- `entity_description`
+- `community_full_content`
+
+## Workflow Configurations
+
+### workflows
+
+実行する workflow 名のリストです。順番に実行されます。GraphRAG には組み込みパイプラインがありますが、すでに一部処理を自前で済ませている場合は、必要なものだけを指定できます。
+
+### embed_text
+
+既定では、GraphRAG indexer は query method に必要な embedding だけを出力します。ただし、モデル側ではプレーンテキストの全フィールドに対する embedding を定義でき、`target` と `names` で調整できます。
+
+対応する embedding 名は次のとおりです。
+
+- `text_unit_text`
+- `entity_description`
+- `community_full_content`
+
+#### Fields
+
+- `embedding_model_id` - text embedding に使う model definition の名前です。
+- `model_instance_name` - model singleton instance の名前です。既定は `text_embedding` で、主に cache の partition に影響します。
+- `batch_size` - 1 回のバッチで処理する最大サイズです。
+- `batch_max_tokens` - 1 バッチあたりの最大トークン数です。
+- `names` - 実行する embedding 名の一覧です。
+
+## Query 関連の主な設定
+
+### local_search
+
+`text_unit_prop` や `community_prop`、`top_k_entities`、`top_k_relationships` など、local search で context に入れる情報量を調整します。
+
+### global_search
+
+map/reduce 型の global search に使うプロンプトや、context サイズ、生成長などを調整します。
+
+### drift_search
+
+DRIFT search の query 生成、再探索、深さ、local search 側の比率などを調整します。
+
+### basic_search
+
+ベクトル類似度で text unit を引く baseline RAG 用の設定です。`k` は取得する text unit 数、`max_context_tokens` は context の上限です。
