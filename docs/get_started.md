@@ -56,6 +56,23 @@ This will create two files, `.env` and `settings.yaml`, and a directory `input`,
   `GRAPHRAG_API_KEY=<API_KEY>`. Replace `<API_KEY>` with your own OpenAI or Azure API key.
 - `settings.yaml` contains the settings for the pipeline. You can modify this file to change the settings for the pipeline.
 
+### Profile-Based Operation
+
+If you want to compare multiple domains or models, use the profile layout described in [GraphRAG Profiles](profiles/overview.md).
+In that workflow, `graphrag_quickstart/input` stays shared, while each profile owns its own `settings.yaml`, `prompts/`, `cache/`, `logs/`, and `output/`.
+Create a new profile from the shipped template with:
+
+```powershell
+python scripts\create_graphrag_profile.py legal_gpt5nano
+```
+
+Then run the commands with the profile root:
+
+```powershell
+graphrag index --root graphrag_quickstart\profiles\legal_gpt5nano
+graphrag query --root graphrag_quickstart\profiles\legal_gpt5nano "..."
+```
+
 ### Download Sample Text
 
 Get a copy of A Christmas Carol by Charles Dickens from a trusted source:
@@ -193,6 +210,23 @@ graphrag init
 - `input` - `graphrag` で処理するテキストファイルの置き場所です。
 - `.env` - GraphRAG pipeline の実行に必要な環境変数を含みます。ファイルを確認すると、`GRAPHRAG_API_KEY=<API_KEY>` という 1 つの環境変数が定義されているはずです。`<API_KEY>` を、ご自身の OpenAI か Azure の API key に置き換えてください。
 - `settings.yaml` - pipeline の設定を含みます。このファイルを編集すると、pipeline の設定を変更できます。
+
+### Profile ベースの運用
+
+複数のドメインやモデルを比較したい場合は、[GraphRAG Profiles](profiles/overview.md) にある profile レイアウトを使います。
+この運用では `graphrag_quickstart/input` を共有し、各 profile が自分専用の `settings.yaml`、`prompts/`、`cache/`、`logs/`、`output/` を持ちます。
+新しい profile は shipped されている template から作成できます。
+
+```powershell
+python scripts\create_graphrag_profile.py legal_gpt5nano
+```
+
+その後は profile root を指定してコマンドを実行します。
+
+```powershell
+graphrag index --root graphrag_quickstart\profiles\legal_gpt5nano
+graphrag query --root graphrag_quickstart\profiles\legal_gpt5nano "..."
+```
 
 ### サンプルテキストのダウンロード
 

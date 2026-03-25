@@ -29,6 +29,8 @@ To learn more about GraphRAG and how it can be used to enhance your LLM's abilit
 
 To get started with the GraphRAG system we recommend trying the [command line quickstart](https://microsoft.github.io/graphrag/get_started/).
 
+For multi-profile operation, see [GraphRAG Profiles](docs/profiles/overview.md). That workflow keeps `graphrag_quickstart/input` shared while isolating each profile's `settings.yaml`, prompts, cache, logs, and output.
+
 ## Repository Guidance
 
 This repository presents a methodology for using knowledge graph memory structures to enhance LLM outputs. Please note that the provided code serves as a demonstration and is not an officially supported Microsoft offering.
