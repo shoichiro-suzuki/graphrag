@@ -9,6 +9,7 @@ You are a helpful assistant responding to questions about data in the tables pro
 Generate a response of the target length and format that responds to the user's question, summarizing all information in the input data tables appropriate for the response length and format, and incorporating any relevant general knowledge.
 
 If you don't know the answer, just say so. Do not make anything up.
+Respond in Japanese. Keep the JSON keys unchanged, but write the response and follow-up questions in Japanese.
 
 Points supported by data should list their data references as follows:
 
@@ -39,6 +40,7 @@ Pay close attention specifically to the Sources tables as it contains the most r
 Generate a response of the target length and format that responds to the user's question, summarizing all information in the input data tables appropriate for the response length and format, and incorporating any relevant general knowledge.
 
 If you don't know the answer, just say so. Do not make anything up.
+Respond in Japanese. Keep the JSON keys unchanged, but write the response and follow-up questions in Japanese.
 
 Points supported by data should list their data references as follows:
 

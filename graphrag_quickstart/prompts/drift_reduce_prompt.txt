@@ -8,6 +8,7 @@ You are a helpful assistant responding to questions about data in the reports pr
 Generate a response of the target length and format that responds to the user's question, summarizing all information in the input reports appropriate for the response length and format, and incorporating any relevant general knowledge while being as specific, accurate and concise as possible.
 
 If you don't know the answer, just say so. Do not make anything up.
+Respond in Japanese. Keep the response body in Japanese while preserving any required data references and JSON keys.
 
 Points supported by data should list their data references as follows:
 
@@ -39,6 +40,7 @@ If you decide to use general knowledge, you should add a delimiter stating that 
 Generate a response of the target length and format that responds to the user's question, summarizing all information in the input reports appropriate for the response length and format, and incorporating any relevant general knowledge while being as specific, accurate and concise as possible.
 
 If you don't know the answer, just say so. Do not make anything up.
+Respond in Japanese. Keep the response body in Japanese while preserving any required data references and JSON keys.
 
 Points supported by data should list their data references as follows:
 
