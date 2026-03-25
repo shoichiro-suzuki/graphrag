@@ -70,6 +70,24 @@ class DefaultMetricsProcessor(MetricsProcessor):
                 response=response,
             )
 
+    def process_completion_usage(
+        self,
+        *,
+        model_config: "ModelConfig",
+        metrics: "Metrics",
+        prompt_tokens: int,
+        completion_tokens: int,
+        reasoning_tokens: int = 0,
+    ) -> None:
+        """Process completion usage values extracted from a streaming response."""
+        self._apply_completion_usage(
+            model_config=model_config,
+            metrics=metrics,
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            reasoning_tokens=reasoning_tokens,
+        )
+
     def _process_lm_chat_completion(
         self,
         model_config: "ModelConfig",
@@ -80,28 +98,61 @@ class DefaultMetricsProcessor(MetricsProcessor):
         """Process LMChatCompletion metrics."""
         prompt_tokens = response.usage.prompt_tokens if response.usage else 0
         completion_tokens = response.usage.completion_tokens if response.usage else 0
+        reasoning_tokens = 0
+        completion_tokens_details = (
+            getattr(response.usage, "completion_tokens_details", None)
+            if response.usage
+            else None
+        )
+        if completion_tokens_details is not None:
+            reasoning_tokens = getattr(
+                completion_tokens_details,
+                "reasoning_tokens",
+                0,
+            ) or 0
+
+        self._apply_completion_usage(
+            model_config=model_config,
+            metrics=metrics,
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            reasoning_tokens=reasoning_tokens,
+        )
+
+    def _apply_completion_usage(
+        self,
+        *,
+        model_config: "ModelConfig",
+        metrics: "Metrics",
+        prompt_tokens: int,
+        completion_tokens: int,
+        reasoning_tokens: int = 0,
+    ) -> None:
         total_tokens = prompt_tokens + completion_tokens
 
         if total_tokens > 0:
             metrics["responses_with_tokens"] = 1
             metrics["prompt_tokens"] = prompt_tokens
             metrics["completion_tokens"] = completion_tokens
+            metrics["reasoning_tokens"] = reasoning_tokens
             metrics["total_tokens"] = total_tokens
 
             model_id = f"{model_config.model_provider}/{model_config.model}"
             model_costs = model_cost_registry.get_model_costs(model_id)
 
-            if not model_costs:
-                return
-
-            input_cost = prompt_tokens * model_costs["input_cost_per_token"]
-            output_cost = completion_tokens * model_costs["output_cost_per_token"]
+            if model_costs:
+                input_cost = prompt_tokens * model_costs["input_cost_per_token"]
+                output_cost = completion_tokens * model_costs["output_cost_per_token"]
+            else:
+                input_cost = 0.0
+                output_cost = 0.0
             total_cost = input_cost + output_cost
 
-            metrics["responses_with_cost"] = 1
-            metrics["input_cost"] = input_cost
-            metrics["output_cost"] = output_cost
-            metrics["total_cost"] = total_cost
+            if model_costs:
+                metrics["responses_with_cost"] = 1
+                metrics["input_cost"] = input_cost
+                metrics["output_cost"] = output_cost
+                metrics["total_cost"] = total_cost
 
     def _process_lm_embedding_response(
         self,
@@ -116,15 +167,15 @@ class DefaultMetricsProcessor(MetricsProcessor):
         if prompt_tokens > 0:
             metrics["responses_with_tokens"] = 1
             metrics["prompt_tokens"] = prompt_tokens
+            metrics["reasoning_tokens"] = 0
             metrics["total_tokens"] = prompt_tokens
 
             model_id = f"{model_config.model_provider}/{model_config.model}"
             model_costs = model_cost_registry.get_model_costs(model_id)
 
-            if not model_costs:
-                return
-
-            input_cost = prompt_tokens * model_costs["input_cost_per_token"]
-            metrics["responses_with_cost"] = 1
-            metrics["input_cost"] = input_cost
-            metrics["total_cost"] = input_cost
+            if model_costs:
+                input_cost = prompt_tokens * model_costs["input_cost_per_token"]
+                metrics["responses_with_cost"] = 1
+                metrics["input_cost"] = input_cost
+                metrics["output_cost"] = 0.0
+                metrics["total_cost"] = input_cost

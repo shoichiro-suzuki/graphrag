@@ -143,6 +143,7 @@ class LiteLLMCompletion(LLMCompletion):
             msg = "response_format is not supported for streaming completions."
             raise ValueError(msg)
 
+        request_scope = kwargs.pop("metrics_scope", None)
         request_metrics: Metrics | None = kwargs.pop("metrics", None) or {}
         if not self._track_metrics:
             request_metrics = None
@@ -150,6 +151,7 @@ class LiteLLMCompletion(LLMCompletion):
         if isinstance(messages, str):
             messages = [{"role": "user", "content": messages}]
 
+        stream_response: Iterator[LLMCompletionChunk] | None = None
         try:
             response = self._completion(
                 messages=messages,
@@ -162,10 +164,28 @@ class LiteLLMCompletion(LLMCompletion):
                     response.content, response_format
                 )
                 response.formatted_response = structured_response
+            if is_streaming and isinstance(response, Iterator):
+                stream_response = response
+
+                def _wrapped_stream() -> Iterator[LLMCompletionChunk]:
+                    try:
+                        for chunk in stream_response:
+                            yield chunk
+                    finally:
+                        if request_metrics is not None:
+                            self._metrics_store.update_metrics(
+                                metrics=request_metrics,
+                                scope=request_scope,
+                            )
+
+                return _wrapped_stream()
             return response
         finally:
-            if request_metrics is not None:
-                self._metrics_store.update_metrics(metrics=request_metrics)
+            if request_metrics is not None and stream_response is None:
+                self._metrics_store.update_metrics(
+                    metrics=request_metrics,
+                    scope=request_scope,
+                )
 
     async def completion_async(
         self,
@@ -182,6 +202,7 @@ class LiteLLMCompletion(LLMCompletion):
             msg = "response_format is not supported for streaming completions."
             raise ValueError(msg)
 
+        request_scope = kwargs.pop("metrics_scope", None)
         request_metrics: Metrics | None = kwargs.pop("metrics", None) or {}
         if not self._track_metrics:
             request_metrics = None
@@ -189,6 +210,7 @@ class LiteLLMCompletion(LLMCompletion):
         if isinstance(messages, str):
             messages = [{"role": "user", "content": messages}]
 
+        stream_response: AsyncIterator[LLMCompletionChunk] | None = None
         try:
             response = await self._completion_async(
                 messages=messages,
@@ -201,10 +223,28 @@ class LiteLLMCompletion(LLMCompletion):
                     response.content, response_format
                 )
                 response.formatted_response = structured_response
+            if is_streaming and isinstance(response, AsyncIterator):
+                stream_response = response
+
+                async def _wrapped_stream() -> AsyncIterator[LLMCompletionChunk]:
+                    try:
+                        async for chunk in stream_response:
+                            yield chunk
+                    finally:
+                        if request_metrics is not None:
+                            self._metrics_store.update_metrics(
+                                metrics=request_metrics,
+                                scope=request_scope,
+                            )
+
+                return _wrapped_stream()
             return response
         finally:
-            if request_metrics is not None:
-                self._metrics_store.update_metrics(metrics=request_metrics)
+            if request_metrics is not None and stream_response is None:
+                self._metrics_store.update_metrics(
+                    metrics=request_metrics,
+                    scope=request_scope,
+                )
 
     @property
     def metrics_store(self) -> "MetricsStore":
@@ -261,6 +301,11 @@ def _create_base_completions(
         if json_object and "response_format" not in new_args:
             new_args["response_format"] = {"type": "json_object"}
 
+        if new_args.get("stream"):
+            stream_options = dict(new_args.get("stream_options") or {})
+            stream_options.setdefault("include_usage", True)
+            new_args["stream_options"] = stream_options
+
         response = litellm.completion(
             **new_args,
         )
@@ -286,6 +331,11 @@ def _create_base_completions(
 
         if json_object and "response_format" not in new_args:
             new_args["response_format"] = {"type": "json_object"}
+
+        if new_args.get("stream"):
+            stream_options = dict(new_args.get("stream_options") or {})
+            stream_options.setdefault("include_usage", True)
+            new_args["stream_options"] = stream_options
 
         response = await litellm.acompletion(
             **new_args,

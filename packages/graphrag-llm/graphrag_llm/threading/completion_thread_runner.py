@@ -12,6 +12,7 @@ from contextlib import contextmanager
 from queue import Empty, Queue
 from typing import TYPE_CHECKING, Protocol, Unpack, runtime_checkable
 
+from graphrag_llm.metrics.command_cost_recorder import command_cost_recorder
 from graphrag_llm.threading.completion_thread import CompletionThread
 
 if TYPE_CHECKING:
@@ -208,7 +209,11 @@ def completion_thread_runner(
         if not request_id:
             msg = "request_id needs to be passed as a keyword argument"
             raise ValueError(msg)
-        input_queue.put((request_id, kwargs))
+        scope_path = command_cost_recorder.current_scope_path()
+        request_kwargs = dict(kwargs)
+        if scope_path:
+            request_kwargs["metrics_scope"] = scope_path
+        input_queue.put((request_id, request_kwargs))
 
     handle_response_thread = threading.Thread(
         target=_process_output,

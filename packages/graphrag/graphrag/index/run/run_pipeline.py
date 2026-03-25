@@ -23,6 +23,7 @@ from graphrag.index.run.utils import create_run_context
 from graphrag.index.typing.context import PipelineRunContext
 from graphrag.index.typing.pipeline import Pipeline
 from graphrag.index.typing.pipeline_run_result import PipelineRunResult
+from graphrag_llm.metrics import command_cost_recorder
 
 logger = logging.getLogger(__name__)
 
@@ -131,8 +132,9 @@ async def _run_pipeline(
             last_workflow = name
             context.callbacks.workflow_start(name, None)
 
-            with WorkflowProfiler() as profiler:
-                result = await workflow_function(config, context)
+            with command_cost_recorder.scope(name):
+                with WorkflowProfiler() as profiler:
+                    result = await workflow_function(config, context)
 
             context.callbacks.workflow_end(name, result)
             yield PipelineRunResult(

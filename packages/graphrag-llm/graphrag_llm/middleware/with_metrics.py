@@ -3,8 +3,12 @@
 
 """Metrics middleware to process metrics using a MetricsProcessor."""
 
+import logging
 import time
+from collections.abc import AsyncIterator, Iterator
 from typing import TYPE_CHECKING, Any
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from graphrag_llm.config import ModelConfig
@@ -14,6 +18,22 @@ if TYPE_CHECKING:
         LLMFunction,
         Metrics,
     )
+
+
+def _extract_completion_usage(chunk: Any) -> tuple[int, int, int] | None:
+    """Extract prompt, completion, and reasoning token counts from a streamed chunk."""
+    usage = getattr(chunk, "usage", None)
+    if usage is None:
+        return None
+
+    prompt_tokens = getattr(usage, "prompt_tokens", 0) or 0
+    completion_tokens = getattr(usage, "completion_tokens", 0) or 0
+    reasoning_tokens = 0
+    completion_tokens_details = getattr(usage, "completion_tokens_details", None)
+    if completion_tokens_details is not None:
+        reasoning_tokens = getattr(completion_tokens_details, "reasoning_tokens", 0) or 0
+
+    return prompt_tokens, completion_tokens, reasoning_tokens
 
 
 def with_metrics(
@@ -57,6 +77,35 @@ def with_metrics(
         end_time = time.time()
 
         if metrics is not None:
+            if kwargs.get("stream") and isinstance(response, Iterator):
+                def _wrapped_stream() -> Iterator[Any]:
+                    last_usage: tuple[int, int, int] | None = None
+                    try:
+                        for chunk in response:
+                            usage = _extract_completion_usage(chunk)
+                            if usage is not None:
+                                last_usage = usage
+                            yield chunk
+                    finally:
+                        metrics["compute_duration_seconds"] = time.time() - start_time
+                        metrics["streaming_responses"] = 1
+                        if last_usage is not None:
+                            try:
+                                metrics_processor.process_completion_usage(
+                                    model_config=model_config,
+                                    metrics=metrics,
+                                    prompt_tokens=last_usage[0],
+                                    completion_tokens=last_usage[1],
+                                    reasoning_tokens=last_usage[2],
+                                )
+                            except Exception:  # noqa: BLE001
+                                logger.warning(
+                                    "Failed to process streamed completion usage.",
+                                    exc_info=True,
+                                )
+
+                return _wrapped_stream()
+
             metrics_processor.process_metrics(
                 model_config=model_config,
                 metrics=metrics,
@@ -81,6 +130,35 @@ def with_metrics(
         end_time = time.time()
 
         if metrics is not None:
+            if kwargs.get("stream") and isinstance(response, AsyncIterator):
+                async def _wrapped_stream() -> AsyncIterator[Any]:
+                    last_usage: tuple[int, int, int] | None = None
+                    try:
+                        async for chunk in response:
+                            usage = _extract_completion_usage(chunk)
+                            if usage is not None:
+                                last_usage = usage
+                            yield chunk
+                    finally:
+                        metrics["compute_duration_seconds"] = time.time() - start_time
+                        metrics["streaming_responses"] = 1
+                        if last_usage is not None:
+                            try:
+                                metrics_processor.process_completion_usage(
+                                    model_config=model_config,
+                                    metrics=metrics,
+                                    prompt_tokens=last_usage[0],
+                                    completion_tokens=last_usage[1],
+                                    reasoning_tokens=last_usage[2],
+                                )
+                            except Exception:  # noqa: BLE001
+                                logger.warning(
+                                    "Failed to process streamed completion usage.",
+                                    exc_info=True,
+                                )
+
+                return _wrapped_stream()
+
             metrics_processor.process_metrics(
                 model_config=model_config,
                 metrics=metrics,

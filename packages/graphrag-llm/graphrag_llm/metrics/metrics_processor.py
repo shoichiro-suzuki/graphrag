@@ -57,3 +57,19 @@ class MetricsProcessor(ABC):
             None
         """
         raise NotImplementedError
+
+    def process_completion_usage(
+        self,
+        *,
+        model_config: "ModelConfig",
+        metrics: "Metrics",
+        prompt_tokens: int,
+        completion_tokens: int,
+        reasoning_tokens: int = 0,
+    ) -> None:
+        """Process completion usage extracted from a streamed or non-streamed response.
+
+        Metrics processors that do not need special handling for streamed usage can
+        ignore this hook.
+        """
+        return None

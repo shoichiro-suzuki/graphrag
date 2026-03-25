@@ -122,6 +122,7 @@ class LiteLLMEmbedding(LLMEmbedding):
         self, /, **kwargs: Unpack["LLMEmbeddingArgs"]
     ) -> "LLMEmbeddingResponse":
         """Sync embedding method."""
+        request_scope = kwargs.pop("metrics_scope", None)
         request_metrics: Metrics | None = kwargs.pop("metrics", None) or {}
         if not self._track_metrics:
             request_metrics = None
@@ -130,12 +131,16 @@ class LiteLLMEmbedding(LLMEmbedding):
             return self._embedding(metrics=request_metrics, **kwargs)
         finally:
             if request_metrics:
-                self._metrics_store.update_metrics(metrics=request_metrics)
+                self._metrics_store.update_metrics(
+                    metrics=request_metrics,
+                    scope=request_scope,
+                )
 
     async def embedding_async(
         self, /, **kwargs: Unpack["LLMEmbeddingArgs"]
     ) -> "LLMEmbeddingResponse":
         """Async embedding method."""
+        request_scope = kwargs.pop("metrics_scope", None)
         request_metrics: Metrics | None = kwargs.pop("metrics", None) or {}
         if not self._track_metrics:
             request_metrics = None
@@ -144,7 +149,10 @@ class LiteLLMEmbedding(LLMEmbedding):
             return await self._embedding_async(metrics=request_metrics, **kwargs)
         finally:
             if request_metrics:
-                self._metrics_store.update_metrics(metrics=request_metrics)
+                self._metrics_store.update_metrics(
+                    metrics=request_metrics,
+                    scope=request_scope,
+                )
 
     @property
     def metrics_store(self) -> "MetricsStore":

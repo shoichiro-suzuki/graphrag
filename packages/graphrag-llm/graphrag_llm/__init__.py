@@ -3,6 +3,13 @@
 
 """GraphRAG LLM Package."""
 
-import nest_asyncio2
+try:
+    import nest_asyncio2
+except ImportError:  # pragma: no cover - optional runtime dependency
+    try:
+        import nest_asyncio as nest_asyncio2
+    except ImportError:  # pragma: no cover - optional runtime dependency
+        nest_asyncio2 = None
 
-nest_asyncio2.apply()  # noqa: RUF067
+if nest_asyncio2 is not None:
+    nest_asyncio2.apply()  # noqa: RUF067

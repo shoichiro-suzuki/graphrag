@@ -16,6 +16,7 @@ from graphrag.callbacks.noop_query_callbacks import NoopQueryCallbacks
 from graphrag.config.load_config import load_config
 from graphrag.config.models.graph_rag_config import GraphRagConfig
 from graphrag.data_model.data_reader import DataReader
+from graphrag_llm.metrics import command_cost_recorder
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -59,20 +60,50 @@ def run_global_search(
     communities: pd.DataFrame = dataframe_dict["communities"]
     community_reports: pd.DataFrame = dataframe_dict["community_reports"]
 
-    if streaming:
+    with command_cost_recorder.command_run(
+        command="graphrag query",
+        output_dir=config.output_storage.base_dir or Path.cwd(),
+        search_type="global",
+        streaming=streaming,
+        community_level=community_level,
+        dynamic_community_selection=dynamic_community_selection,
+        response_type=response_type,
+    ):
+        if streaming:
 
-        async def run_streaming_search():
-            full_response = ""
-            context_data = {}
+            async def run_streaming_search():
+                full_response = ""
+                context_data = {}
 
-            def on_context(context: Any) -> None:
-                nonlocal context_data
-                context_data = context
+                def on_context(context: Any) -> None:
+                    nonlocal context_data
+                    context_data = context
 
-            callbacks = NoopQueryCallbacks()
-            callbacks.on_context = on_context
+                callbacks = NoopQueryCallbacks()
+                callbacks.on_context = on_context
 
-            async for stream_chunk in api.global_search_streaming(
+                async for stream_chunk in api.global_search_streaming(
+                    config=config,
+                    entities=entities,
+                    communities=communities,
+                    community_reports=community_reports,
+                    community_level=community_level,
+                    dynamic_community_selection=dynamic_community_selection,
+                    response_type=response_type,
+                    query=query,
+                    callbacks=[callbacks],
+                    verbose=verbose,
+                ):
+                    full_response += stream_chunk
+                    print(stream_chunk, end="")
+                    sys.stdout.flush()
+                print()
+                return full_response, context_data
+
+            return asyncio.run(run_streaming_search())
+
+        response, context_data = asyncio.run(
+            api.global_search(
                 config=config,
                 entities=entities,
                 communities=communities,
@@ -81,33 +112,12 @@ def run_global_search(
                 dynamic_community_selection=dynamic_community_selection,
                 response_type=response_type,
                 query=query,
-                callbacks=[callbacks],
                 verbose=verbose,
-            ):
-                full_response += stream_chunk
-                print(stream_chunk, end="")
-                sys.stdout.flush()
-            print()
-            return full_response, context_data
-
-        return asyncio.run(run_streaming_search())
-    # not streaming
-    response, context_data = asyncio.run(
-        api.global_search(
-            config=config,
-            entities=entities,
-            communities=communities,
-            community_reports=community_reports,
-            community_level=community_level,
-            dynamic_community_selection=dynamic_community_selection,
-            response_type=response_type,
-            query=query,
-            verbose=verbose,
+            )
         )
-    )
-    print(response)
+        print(response)
 
-    return response, context_data
+        return response, context_data
 
 
 def run_local_search(
@@ -152,20 +162,51 @@ def run_local_search(
     entities: pd.DataFrame = dataframe_dict["entities"]
     covariates: pd.DataFrame | None = dataframe_dict["covariates"]
 
-    if streaming:
+    with command_cost_recorder.command_run(
+        command="graphrag query",
+        output_dir=config.output_storage.base_dir or Path.cwd(),
+        search_type="local",
+        streaming=streaming,
+        community_level=community_level,
+        response_type=response_type,
+    ):
+        if streaming:
 
-        async def run_streaming_search():
-            full_response = ""
-            context_data = {}
+            async def run_streaming_search():
+                full_response = ""
+                context_data = {}
 
-            def on_context(context: Any) -> None:
-                nonlocal context_data
-                context_data = context
+                def on_context(context: Any) -> None:
+                    nonlocal context_data
+                    context_data = context
 
-            callbacks = NoopQueryCallbacks()
-            callbacks.on_context = on_context
+                callbacks = NoopQueryCallbacks()
+                callbacks.on_context = on_context
 
-            async for stream_chunk in api.local_search_streaming(
+                async for stream_chunk in api.local_search_streaming(
+                    config=config,
+                    entities=entities,
+                    communities=communities,
+                    community_reports=community_reports,
+                    text_units=text_units,
+                    relationships=relationships,
+                    covariates=covariates,
+                    community_level=community_level,
+                    response_type=response_type,
+                    query=query,
+                    callbacks=[callbacks],
+                    verbose=verbose,
+                ):
+                    full_response += stream_chunk
+                    print(stream_chunk, end="")
+                    sys.stdout.flush()
+                print()
+                return full_response, context_data
+
+            return asyncio.run(run_streaming_search())
+
+        response, context_data = asyncio.run(
+            api.local_search(
                 config=config,
                 entities=entities,
                 communities=communities,
@@ -176,35 +217,12 @@ def run_local_search(
                 community_level=community_level,
                 response_type=response_type,
                 query=query,
-                callbacks=[callbacks],
                 verbose=verbose,
-            ):
-                full_response += stream_chunk
-                print(stream_chunk, end="")
-                sys.stdout.flush()
-            print()
-            return full_response, context_data
-
-        return asyncio.run(run_streaming_search())
-    # not streaming
-    response, context_data = asyncio.run(
-        api.local_search(
-            config=config,
-            entities=entities,
-            communities=communities,
-            community_reports=community_reports,
-            text_units=text_units,
-            relationships=relationships,
-            covariates=covariates,
-            community_level=community_level,
-            response_type=response_type,
-            query=query,
-            verbose=verbose,
+            )
         )
-    )
-    print(response)
+        print(response)
 
-    return response, context_data
+        return response, context_data
 
 
 def run_drift_search(
@@ -245,20 +263,50 @@ def run_drift_search(
     relationships: pd.DataFrame = dataframe_dict["relationships"]
     entities: pd.DataFrame = dataframe_dict["entities"]
 
-    if streaming:
+    with command_cost_recorder.command_run(
+        command="graphrag query",
+        output_dir=config.output_storage.base_dir or Path.cwd(),
+        search_type="drift",
+        streaming=streaming,
+        community_level=community_level,
+        response_type=response_type,
+    ):
+        if streaming:
 
-        async def run_streaming_search():
-            full_response = ""
-            context_data = {}
+            async def run_streaming_search():
+                full_response = ""
+                context_data = {}
 
-            def on_context(context: Any) -> None:
-                nonlocal context_data
-                context_data = context
+                def on_context(context: Any) -> None:
+                    nonlocal context_data
+                    context_data = context
 
-            callbacks = NoopQueryCallbacks()
-            callbacks.on_context = on_context
+                callbacks = NoopQueryCallbacks()
+                callbacks.on_context = on_context
 
-            async for stream_chunk in api.drift_search_streaming(
+                async for stream_chunk in api.drift_search_streaming(
+                    config=config,
+                    entities=entities,
+                    communities=communities,
+                    community_reports=community_reports,
+                    text_units=text_units,
+                    relationships=relationships,
+                    community_level=community_level,
+                    response_type=response_type,
+                    query=query,
+                    callbacks=[callbacks],
+                    verbose=verbose,
+                ):
+                    full_response += stream_chunk
+                    print(stream_chunk, end="")
+                    sys.stdout.flush()
+                print()
+                return full_response, context_data
+
+            return asyncio.run(run_streaming_search())
+
+        response, context_data = asyncio.run(
+            api.drift_search(
                 config=config,
                 entities=entities,
                 communities=communities,
@@ -268,35 +316,12 @@ def run_drift_search(
                 community_level=community_level,
                 response_type=response_type,
                 query=query,
-                callbacks=[callbacks],
                 verbose=verbose,
-            ):
-                full_response += stream_chunk
-                print(stream_chunk, end="")
-                sys.stdout.flush()
-            print()
-            return full_response, context_data
-
-        return asyncio.run(run_streaming_search())
-
-    # not streaming
-    response, context_data = asyncio.run(
-        api.drift_search(
-            config=config,
-            entities=entities,
-            communities=communities,
-            community_reports=community_reports,
-            text_units=text_units,
-            relationships=relationships,
-            community_level=community_level,
-            response_type=response_type,
-            query=query,
-            verbose=verbose,
+            )
         )
-    )
-    print(response)
+        print(response)
 
-    return response, context_data
+        return response, context_data
 
 
 def run_basic_search(
@@ -328,47 +353,54 @@ def run_basic_search(
 
     text_units: pd.DataFrame = dataframe_dict["text_units"]
 
-    if streaming:
+    with command_cost_recorder.command_run(
+        command="graphrag query",
+        output_dir=config.output_storage.base_dir or Path.cwd(),
+        search_type="basic",
+        streaming=streaming,
+        response_type=response_type,
+    ):
+        if streaming:
 
-        async def run_streaming_search():
-            full_response = ""
-            context_data = {}
+            async def run_streaming_search():
+                full_response = ""
+                context_data = {}
 
-            def on_context(context: Any) -> None:
-                nonlocal context_data
-                context_data = context
+                def on_context(context: Any) -> None:
+                    nonlocal context_data
+                    context_data = context
 
-            callbacks = NoopQueryCallbacks()
-            callbacks.on_context = on_context
+                callbacks = NoopQueryCallbacks()
+                callbacks.on_context = on_context
 
-            async for stream_chunk in api.basic_search_streaming(
+                async for stream_chunk in api.basic_search_streaming(
+                    config=config,
+                    text_units=text_units,
+                    response_type=response_type,
+                    query=query,
+                    callbacks=[callbacks],
+                    verbose=verbose,
+                ):
+                    full_response += stream_chunk
+                    print(stream_chunk, end="")
+                    sys.stdout.flush()
+                print()
+                return full_response, context_data
+
+            return asyncio.run(run_streaming_search())
+
+        response, context_data = asyncio.run(
+            api.basic_search(
                 config=config,
                 text_units=text_units,
                 response_type=response_type,
                 query=query,
-                callbacks=[callbacks],
                 verbose=verbose,
-            ):
-                full_response += stream_chunk
-                print(stream_chunk, end="")
-                sys.stdout.flush()
-            print()
-            return full_response, context_data
-
-        return asyncio.run(run_streaming_search())
-    # not streaming
-    response, context_data = asyncio.run(
-        api.basic_search(
-            config=config,
-            text_units=text_units,
-            response_type=response_type,
-            query=query,
-            verbose=verbose,
+            )
         )
-    )
-    print(response)
+        print(response)
 
-    return response, context_data
+        return response, context_data
 
 
 def _resolve_output_files(

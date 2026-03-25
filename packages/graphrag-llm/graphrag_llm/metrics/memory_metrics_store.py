@@ -8,6 +8,7 @@ import threading
 from typing import TYPE_CHECKING, Any
 
 from graphrag_llm.metrics.metrics_aggregator import metrics_aggregator
+from graphrag_llm.metrics.command_cost_recorder import command_cost_recorder
 from graphrag_llm.metrics.metrics_store import MetricsStore
 
 if TYPE_CHECKING:
@@ -31,6 +32,7 @@ _default_sort_order: list[str] = [
     "responses_with_tokens",
     "prompt_tokens",
     "completion_tokens",
+    "reasoning_tokens",
     "total_tokens",
     "tokens_per_response",
     "responses_with_cost",
@@ -77,7 +79,12 @@ class MemoryMetricsStore(MetricsStore):
         """Get the ID of the metrics store."""
         return self._id
 
-    def update_metrics(self, *, metrics: "Metrics") -> None:
+    def update_metrics(
+        self,
+        *,
+        metrics: "Metrics",
+        scope: tuple[str, ...] | None = None,
+    ) -> None:
         """Update the store with multiple metrics."""
         with self._thread_lock:
             for name, value in metrics.items():
@@ -85,6 +92,12 @@ class MemoryMetricsStore(MetricsStore):
                     self._metrics[name] += value
                 else:
                     self._metrics[name] = value
+
+        command_cost_recorder.record_metrics(
+            model_id=self._id,
+            metrics=metrics,
+            scope_path=scope,
+        )
 
     def _sort_metrics(self) -> "Metrics":
         """Sort metrics based on the predefined sort order."""

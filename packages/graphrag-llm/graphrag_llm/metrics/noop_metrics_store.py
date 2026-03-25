@@ -23,7 +23,12 @@ class NoopMetricsStore(MetricsStore):
         """Get the ID of the metrics store."""
         return ""
 
-    def update_metrics(self, *, metrics: Metrics) -> None:
+    def update_metrics(
+        self,
+        *,
+        metrics: Metrics,
+        scope: tuple[str, ...] | None = None,
+    ) -> None:
         """Noop update."""
         return
 

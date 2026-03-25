@@ -45,13 +45,20 @@ class MetricsStore(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def update_metrics(self, *, metrics: "Metrics") -> None:
+    def update_metrics(
+        self,
+        *,
+        metrics: "Metrics",
+        scope: tuple[str, ...] | None = None,
+    ) -> None:
         """Update the store with multiple metrics.
 
         Args
         ----
-            metrics: Metrics
-                The metrics to merge into the store.
+        metrics: Metrics
+            The metrics to merge into the store.
+        scope: tuple[str, ...] | None
+            Optional execution scope for command-level cost recording.
 
         Returns
         -------

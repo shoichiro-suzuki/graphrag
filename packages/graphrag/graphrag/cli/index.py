@@ -10,6 +10,7 @@ import warnings
 from pathlib import Path
 
 from graphrag_cache.cache_type import CacheType
+from graphrag_llm.metrics import command_cost_recorder
 
 import graphrag.api as api
 from graphrag.callbacks.console_workflow_callbacks import ConsoleWorkflowCallbacks
@@ -121,15 +122,24 @@ def _run_index(
 
     _register_signal_handlers()
 
-    outputs = asyncio.run(
-        api.build_index(
-            config=config,
-            method=method,
-            is_update_run=is_update_run,
-            callbacks=[ConsoleWorkflowCallbacks(verbose=verbose)],
-            verbose=verbose,
+    command_name = "graphrag update" if is_update_run else "graphrag index"
+    with command_cost_recorder.command_run(
+        command=command_name,
+        output_dir=config.output_storage.base_dir or Path.cwd(),
+        indexing_method=method.value,
+        is_update_run=is_update_run,
+        cache_enabled=cache,
+        verbose=verbose,
+    ):
+        outputs = asyncio.run(
+            api.build_index(
+                config=config,
+                method=method,
+                is_update_run=is_update_run,
+                callbacks=[ConsoleWorkflowCallbacks(verbose=verbose)],
+                verbose=verbose,
+            )
         )
-    )
     encountered_errors = any(output.error is not None for output in outputs)
 
     sys.exit(1 if encountered_errors else 0)

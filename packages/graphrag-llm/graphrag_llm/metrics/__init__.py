@@ -4,6 +4,7 @@
 """Metrics module for graphrag-llm."""
 
 from graphrag_llm.metrics.metrics_aggregator import metrics_aggregator
+from graphrag_llm.metrics.command_cost_recorder import command_cost_recorder
 from graphrag_llm.metrics.metrics_processor import MetricsProcessor
 from graphrag_llm.metrics.metrics_processor_factory import (
     create_metrics_processor,
@@ -24,6 +25,7 @@ __all__ = [
     "MetricsProcessor",
     "MetricsStore",
     "MetricsWriter",
+    "command_cost_recorder",
     "create_metrics_processor",
     "create_metrics_store",
     "create_metrics_writer",

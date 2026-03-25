@@ -24,6 +24,20 @@ completion_models:
     api_key: ${{GRAPHRAG_API_KEY}} # set this in the generated .env file, or remove if managed identity
     retry:
       type: exponential_backoff
+  query_completion_model:
+    model_provider: {defs.DEFAULT_MODEL_PROVIDER}
+    model: <DEFAULT_COMPLETION_MODEL>
+    auth_method: {defs.DEFAULT_COMPLETION_MODEL_AUTH_TYPE}
+    api_key: ${{GRAPHRAG_API_KEY}}
+    retry:
+      type: exponential_backoff
+  gpt-5-nano:
+    model_provider: {defs.DEFAULT_MODEL_PROVIDER}
+    model: gpt-5-nano
+    auth_method: {defs.DEFAULT_COMPLETION_MODEL_AUTH_TYPE}
+    api_key: ${{GRAPHRAG_API_KEY}}
+    retry:
+      type: exponential_backoff
 
 embedding_models:
   {defs.DEFAULT_EMBEDDING_MODEL_ID}:
@@ -76,14 +90,15 @@ vector_store:
 embed_text:
   embedding_model_id: {graphrag_config_defaults.embed_text.embedding_model_id}
 
+# Index workflows use gpt-5-nano in this template; switch back if you prefer.
 extract_graph:
-  completion_model_id: {graphrag_config_defaults.extract_graph.completion_model_id}
+  completion_model_id: gpt-5-nano
   prompt: "prompts/extract_graph.txt"
   entity_types: [{",".join(graphrag_config_defaults.extract_graph.entity_types)}]
   max_gleanings: {graphrag_config_defaults.extract_graph.max_gleanings}
 
 summarize_descriptions:
-  completion_model_id: {graphrag_config_defaults.summarize_descriptions.completion_model_id}
+  completion_model_id: gpt-5-nano
   prompt: "prompts/summarize_descriptions.txt"
   max_length: {graphrag_config_defaults.summarize_descriptions.max_length}
 
@@ -96,13 +111,13 @@ cluster_graph:
 
 extract_claims:
   enabled: false
-  completion_model_id: {graphrag_config_defaults.extract_claims.completion_model_id}
+  completion_model_id: gpt-5-nano
   prompt: "prompts/extract_claims.txt"
   description: "{graphrag_config_defaults.extract_claims.description}"
   max_gleanings: {graphrag_config_defaults.extract_claims.max_gleanings}
 
 community_reports:
-  completion_model_id: {graphrag_config_defaults.community_reports.completion_model_id}
+  completion_model_id: gpt-5-nano
   graph_prompt: "prompts/community_report_graph.txt"
   text_prompt: "prompts/community_report_text.txt"
   max_length: {graphrag_config_defaults.community_reports.max_length}
@@ -115,26 +130,27 @@ snapshots:
 ### Query settings ###
 ## The prompt locations are required here, but each search method has a number of optional knobs that can be tuned.
 ## See the config docs: https://microsoft.github.io/graphrag/config/yaml/#query
+# Query workflows can keep the default model or switch to gpt-5-nano here.
 
 local_search:
-  completion_model_id: {graphrag_config_defaults.local_search.completion_model_id}
+  completion_model_id: query_completion_model
   embedding_model_id: {graphrag_config_defaults.local_search.embedding_model_id}
   prompt: "prompts/local_search_system_prompt.txt"
 
 global_search:
-  completion_model_id: {graphrag_config_defaults.global_search.completion_model_id}
+  completion_model_id: query_completion_model
   map_prompt: "prompts/global_search_map_system_prompt.txt"
   reduce_prompt: "prompts/global_search_reduce_system_prompt.txt"
   knowledge_prompt: "prompts/global_search_knowledge_system_prompt.txt"
 
 drift_search:
-  completion_model_id: {graphrag_config_defaults.drift_search.completion_model_id}
+  completion_model_id: query_completion_model
   embedding_model_id: {graphrag_config_defaults.drift_search.embedding_model_id}
   prompt: "prompts/drift_search_system_prompt.txt"
   reduce_prompt: "prompts/drift_search_reduce_prompt.txt"
 
 basic_search:
-  completion_model_id: {graphrag_config_defaults.basic_search.completion_model_id}
+  completion_model_id: query_completion_model
   embedding_model_id: {graphrag_config_defaults.basic_search.embedding_model_id}
   prompt: "prompts/basic_search_system_prompt.txt"
 """

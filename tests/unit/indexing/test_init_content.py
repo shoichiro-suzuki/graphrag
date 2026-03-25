@@ -13,6 +13,7 @@ def test_init_yaml():
     data = yaml.load(INIT_YAML, Loader=yaml.FullLoader)
     config = GraphRagConfig(**data)
     GraphRagConfig.model_validate(config, strict=True)
+    assert "gpt-5-nano" in data["completion_models"]
 
 
 def test_init_yaml_uncommented():
@@ -27,3 +28,4 @@ def test_init_yaml_uncommented():
     data = yaml.load(content, Loader=yaml.FullLoader)
     config = GraphRagConfig(**data)
     GraphRagConfig.model_validate(config, strict=True)
+    assert "gpt-5-nano" in data["completion_models"]
