@@ -20,6 +20,19 @@
 | `basic` | 単純な vector RAG の基本検索。`text_units` を中心に参照する。 | 比較検証、軽量な検索 | `graphrag query "What does the document say about memory?" --method basic` |
 | `question generation` | 既存の質問履歴から次の候補質問を生成する。CLI の `query --method` ではない。 | フォローアップ質問の候補生成 | CLI ではなく Python API / notebook 経由 |
 
+## 参照ソース対応表
+
+ここでいう「ソース」は、回答文の末尾に付く ` [Data: ...] ` の参照先を指す。  
+原文追跡のしやすさを含めて、どの方式がどのテーブルを主に参照するかを整理すると次のとおり。
+
+| 種別 | 主な参照元 | 参照方法 | 原文まで追跡しやすいか | 補足 |
+| --- | --- | --- | --- | --- |
+| `global` | `community_reports` | community report を LLM で map-reduce し、関連度の高い report を選んで要約する。`Reports` が主根拠になる。 | 低い | 全体要約が中心で、原文チャンクではなく community report を根拠にする。 |
+| `local` | `text_units` / `entities` / `relationships` / `covariates` / `community_reports` | query を embedding で entity に写像し、そこから entity-text unit mapping、entity 関係、covariate、community report を集める。`Sources` も出せる。 | 高い | 最も原文追跡しやすい。`Sources` から text unit、さらに documents へ戻れる。 |
+| `drift` | `text_units` / `community_reports` | local の `Sources` を基礎にしつつ、community 情報を使って探索を広げる。`Sources` と `Reports` を組み合わせる。 | 高い | local より探索範囲が広く、report 側の情報も強く使う。 |
+| `basic` | `text_units` | query を embedding で text unit に近いものへ近傍検索し、`Sources` として返す。 | 高い | 比較用の簡易検索で、原文チャンクを直接参照しやすい。 |
+| `question generation` | `text_units` / `entities` / `relationships` などの context | 既存の質問群を context にして次の質問候補を生成する。 | 対象外 | これは query の回答ではなく、次の質問候補を作る機能。 |
+
 ## 補足メモ
 
 - `global` は全体要約寄りで、コミュニティレポートを使う。([docs/query/global_search.md](../docs/query/global_search.md))
@@ -84,3 +97,48 @@ graphrag query "What does the document say about memory?" --method basic
 
 `Question Generation` は `query` の method ではないため、`graphrag query --method question_generation` のような使い方はしない。  
 仕様は [docs/query/question_generation.md](../docs/query/question_generation.md) にあり、同じ context-building を使って候補質問を生成する機能として説明されている。
+
+## 根拠付き回答の出し方
+
+`graphrag query` の回答末尾に付く ` [Data: ...] ` は、その文を支える根拠レコードの参照である。  
+数値は配列の行番号ではなく、`output/*.parquet` に保存される各テーブルの `human_readable_id` を指す。
+
+### 参照先の対応
+
+| ラベル | 参照元テーブル | 何を指すか |
+| --- | --- | --- |
+| `Sources` | `text_units` | 原文チャンク。文書のどの箇所を根拠にしたかを辿るための入口 |
+| `Entities` | `entities` | 抽出された entity レコード |
+| `Relationships` | `relationships` | entity 間の関係レコード |
+| `Reports` | `community_reports` | community report のレコード |
+| `Claims` | `covariates` | 抽出された claim/covariate レコード |
+
+`human_readable_id` は、`docs/index/outputs.md` にある通り、各 run で振られる短い連番である。  
+内部の一意 ID は別に `id` 列として持たれており、`Data:` で見える番号はその `id` ではない。
+
+### 使い方
+
+1. 回答文の各主張に、対応する `Data:` を付ける。
+2. 1つの参照に 5 件を超える ID は入れず、必要なら `+more` を付ける。
+3. まずは `Sources` を優先して原文チャンクまで戻る。
+4. 必要に応じて `Entities` や `Relationships` を見て、抽出された構造情報で裏を取る。
+
+### 回答例
+
+質問: `図面管理ポリシーにおける流出防止を実現するために下位規定で定めていることは何か`
+
+回答例:
+
+> 下位規定では、図面の流出防止のために、機密管理規定に基づいて紛失防止と流出防止に努めること、紙で保管する場合は施錠できるキャビネットに保管して無断持出しを防ぐこと、データで保管する場合は定期バックアップとアクセス制限、アクセス記録の保管を行うことを定めている。 [Data: Sources (11, 13); Entities (261, 274); Relationships (294, 305)]
+
+このように、`Sources` で原文チャンクを示し、`Entities` と `Relationships` で構造化された裏付けを補強する書き方が基本になる。
+
+### 実務上の読み方
+
+- `Sources (13, 11)` のような表記は、`text_units` の `human_readable_id` 13 と 11 を指す
+- `Entities (261, 274, ...)` は `entities` の `human_readable_id`
+- `Relationships (294, 305, ...)` は `relationships` の `human_readable_id`
+- `Reports (24, 4, 18, 0, 1, +more)` は community report の `human_readable_id`
+
+必要なら、実際の `output/*.parquet` を開いて `human_readable_id` から原文まで逆引きできる。  
+その場合は、`text_units` -> `documents` -> `input` の順に追うと、回答の根拠を元ファイルまで戻せる。
