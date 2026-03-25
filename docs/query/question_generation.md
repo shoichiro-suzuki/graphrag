@@ -21,3 +21,32 @@ Below are the key parameters of the [Question Generation class](https://github.c
 ## How to Use
 
 An example of the question generation function can be found in the following [notebook](../examples_notebooks/local_search.ipynb).
+
+---
+
+# 日本語訳
+
+# Question Generation ❔
+
+## エンティティベースの質問生成
+
+[question generation](https://github.com/microsoft/graphrag/blob/main//graphrag/query/question_gen/) method は、knowledge graph の構造化データと input documents の非構造化データを組み合わせて、特定の entity に関連する候補質問を生成します。
+
+## 方法
+
+事前のユーザー質問の一覧を与えると、question generation method は [local search](local_search.md) で使われるものと同じ context-building アプローチを使って、entity、relationship、covariate、community report、raw text chunk を含む関連する構造化データと非構造化データを抽出し、優先順位を付けます。これらのデータレコードは、その後、単一の LLM prompt にまとめられ、データ内で最も重要または緊急性の高い情報内容やテーマを表す候補の follow-up questions を生成します。
+
+## 設定
+
+以下は [Question Generation class](https://github.com/microsoft/graphrag/blob/main//graphrag/query/question_gen/local_gen.py) の主要パラメータです。
+
+* `model`: 応答生成に使用する language model の chat completion object
+* `context_builder`: [context builder](https://github.com/microsoft/graphrag/blob/main//graphrag/query/structured_search/local_search/mixed_context.py) object。knowledge model objects のコレクションから context data を準備するために使用します。local search と同じ context builder class を使います
+* `system_prompt`: candidate questions を生成するための prompt template。既定の template は [system_prompt](https://github.com/microsoft/graphrag/blob/main//graphrag/prompts/query/question_gen_system_prompt.py) にあります
+* `llm_params`: LLM 呼び出しに渡す追加パラメータの dictionary（例: temperature, max_tokens）
+* `context_builder_params`: question generation prompt の context を構築するときに [`context_builder`](https://github.com/microsoft/graphrag/blob/main//graphrag/query/structured_search/local_search/mixed_context.py) object に渡す追加パラメータの dictionary
+* `callbacks`: 任意の callback function。LLM の completion streaming event に対してカスタム event handler を提供するために使用できます
+
+## 使い方
+
+question generation function の例は、次の [notebook](../examples_notebooks/local_search.ipynb) にあります。

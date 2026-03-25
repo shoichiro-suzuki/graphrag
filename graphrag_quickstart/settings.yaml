@@ -19,8 +19,8 @@ completion_models:
 embedding_models:
   default_embedding_model:
     model_provider: azure
-    model: text-embedding-3-small
-    azure_deployment_name: text-embedding-3-small
+    model: text-embedding-3-large
+    azure_deployment_name: text-embedding-3-large
     api_base: https://openai-main-eastus2.services.ai.azure.com/
     api_version: 2024-12-01-preview
     auth_method: api_key
