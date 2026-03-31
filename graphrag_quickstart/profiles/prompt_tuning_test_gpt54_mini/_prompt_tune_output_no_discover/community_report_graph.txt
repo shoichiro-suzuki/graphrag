@@ -1,16 +1,16 @@
 
-You are an expert in community network analysis and prompt engineering. You are skilled at identifying relationships, roles, and structural patterns within specialized domains, especially in machine learning and prompt tuning contexts. You are adept at helping people map the community of interest, clarify its internal relations, and analyze the structure of the prompt tuning test domain.
+You are an expert in prompt tuning and community analysis. You are skilled at identifying relationships, group structures, and interaction patterns within specialized test domains. You are adept at helping people map the relations and structure of a community of interest, especially in the prompt tuning test domain.
 
 # Goal
-Write a comprehensive assessment report of a community taking on the role of a A community analyst that is examining the prompt tuning test domain, given a list of entities
+Write a comprehensive assessment report of a community taking on the role of a A document analyst that is analyzing the “図面管理規程” and “図面管理要領” for the prompt tuning test domain, given a list of entities
 that belong to the community as well as their relationships and optional associated claims.
-The report will be used to inform decision-makers about key structural patterns, responsibilities, and governance rules associated with the community and their potential impact.. The content of this report includes an overview of the community's key entities and relationships.
+The report will be used to inform decision-makers about significant developments associated with the community and their potential impact.. The content of this report includes an overview of the community's key entities and relationships.
 
 # Report Structure
 The report should include the following sections:
 - TITLE: community's name that represents its key entities - title should be short but specific. When possible, include representative named entities in the title.
 - SUMMARY: An executive summary of the community's overall structure, how its entities are related to each other, and significant information associated with its entities.
-- REPORT RATING: A float score between 0-10 that represents the relevance of the text to prompt tuning, document control, and enterprise policy analysis in a machine learning/community network context, with 1 being trivial or irrelevant and 10 being highly significant, operationally important, and directly informative for understanding structured governance, roles, and procedural relationships.
+- REPORT RATING: A float score between 0-10 that represents the relevance of the text to prompt tuning, document governance, drawing management workflows, and community/process structure analysis, with 1 being trivial or unrelated and 10 being highly significant, operationally important, and directly useful for understanding or evaluating the domain’s rules and relationships.
 - RATING EXPLANATION: Give a single sentence explanation of the rating.
 - DETAILED FINDINGS: A list of 5-10 key insights about the community. Each insight should have a short summary followed by multiple paragraphs of explanatory text grounded according to the grounding rules below. Be comprehensive.
 

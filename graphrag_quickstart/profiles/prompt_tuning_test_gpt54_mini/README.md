@@ -1,4 +1,4 @@
-# GraphRAG Profile: prompt_tuning_test_nano
+# GraphRAG Profile: prompt_tuning_test_gpt54_mini
 
 このプロファイルは、LLM 利用コスト、精度、確認工数のバランスを比較するためのベンチマーク用 workspace です。
 複数の LLM モデルと prompt tuning の組み合わせを変えながら INDEX を作成し、どの条件が最も精度よく、実運用に向いているかを検証します。
@@ -26,7 +26,7 @@
 
 ## Default 設定
 
-- Index model: `gpt-5-nano`
+- Index model: `gpt-5.4-mini`
 - Query model: `gpt-5.4-mini`
 - Prompt tuning output: `.\_prompt_tune_output_no_discover`（比較用の tuning 結果）
 
@@ -39,7 +39,7 @@
 ## 運用ルール
 
 - prompt tuning をやり直すときは、出力先を条件ごとに分ける
-- 例: `.\_prompt_tune_output_gpt5nano_no_discover`
+- 例: `.\_prompt_tune_output_gpt54_mini_no_discover`
 - 条件名がフォルダ名から分かるようにして、比較の取り違えを防ぐ
 - 変更後は `settings.yaml` が参照する prompt パスと、`prompts/` の実体を必ず一致させる
 
