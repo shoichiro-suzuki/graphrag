@@ -1,0 +1,15 @@
+name: drawing_management
+description: 図面管理要領に関する比較用クエリセット
+defaults:
+  response_type: Multiple Paragraphs
+  streaming: false
+queries:
+  - id: purpose
+    method: global
+    prompt: 図面管理の目的は何か
+  - id: leak_prevention_rules
+    method: local
+    prompt: 図面管理目的の「流出防止」を実現するために具体的に定めたルールは何か。
+  - id: internal_drawings
+    method: drift
+    prompt: 「社内図面」の管理方法を説明してください。

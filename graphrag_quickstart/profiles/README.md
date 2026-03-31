@@ -33,6 +33,26 @@
 - まず profile を複製し、必要な `settings.yaml` と `prompts/` を調整する
 - profile ごとの細部は、それぞれの配下にある README を参照する
 
+## 補助スクリプト
+
+- `scripts/create_graphrag_profile.py` は、`_template` をコピーして新しい profile を作るためのスクリプトです。使い方は `python scripts/create_graphrag_profile.py <profile_name>` です。
+- `scripts/summarize_command_costs.py` は、`graphrag_quickstart/output/command_costs.jsonl` の実行コスト履歴を Markdown で集計するためのスクリプトです。使い方は `python scripts/summarize_command_costs.py graphrag_quickstart\output\command_costs.jsonl -o graphrag_quickstart\output\command_costs_summary.md` です。
+- `scripts/run_query_matrix.py` は、複数 profile に同じ query set を流し込み、回答・コスト・エラーを比較するための制御スクリプトです。
+- まず `init-set` で query set を作り、`run` で複数 profile に流し込み、必要なら `report` で Markdown を再生成します。
+- `prompt_tuning_test_nano` と `prompt_tuning_test_gpt54_mini` の比較では、インデックス作成後にこのスクリプトでコスト差を確認すると比較しやすくなります。
+
+## クエリ比較
+
+- query set の雛形は `graphrag_quickstart/profiles/query_sets/` に置きます。
+- 実行結果は `graphrag_quickstart/profiles/query_runs/` に保存します。
+- `results.jsonl` には各 query の stdout、stderr、コスト、ステータスを残します。
+
+```powershell
+python scripts\run_query_matrix.py init-set benchmark_story
+python scripts\run_query_matrix.py run --query-set benchmark_story --profile legacy --profile prompt_tuning_test_nano --profile prompt_tuning_test_gpt54_mini
+python scripts\run_query_matrix.py report graphrag_quickstart\profiles\query_runs\20260331-153000__benchmark_story
+```
+
 ## `prompt_tuning_test_nano` と `prompt_tuning_test_gpt54_mini`
 
 この 2 つの profile は、LLM 利用コスト、精度、確認工数のバランスを比較するための実験用 profile です。

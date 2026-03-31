@@ -1,6 +1,9 @@
-﻿*/cache/*
+*/cache/*
 */logs/*
 */output/*
+*/query_runs/*
 !*/cache/.gitkeep
 !*/logs/.gitkeep
 !*/output/.gitkeep
+!*/query_runs/.gitkeep
+query_runs/*
