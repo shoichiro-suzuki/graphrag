@@ -8,6 +8,7 @@
 - 新しい domain や設定を作り始めるときは `_template`
 - 既存の quickstart 設定を固定参照として残したいときは `legacy`
 - LLM モデルと prompt tuning の組み合わせを比較したいときは `prompt_tuning_test_nano` と `prompt_tuning_test_gpt54_mini`
+- 埋め込みは Azure OpenAI のまま、ドキュメント解析だけローカル LLM に切り替えたいときは `local_llm_*` のモデル別 profile
 
 ## プロファイル一覧
 
@@ -17,6 +18,11 @@
 | `legacy` | 固定参照 | 現在の quickstart 仕様を基準として残す |
 | `prompt_tuning_test_nano` | ベンチマーク用 | LLM モデルと prompt tuning 条件の比較実験 |
 | `prompt_tuning_test_gpt54_mini` | ベンチマーク用 | GPT-5.4-mini を使う比較実験 |
+| `local_llm_gpt_oss_20b` | ローカル LLM 実験用 | `gpt-oss:20b` で解析系 completion を実行 |
+| `local_llm_qwen36_27b` | ローカル LLM 実験用 | `qwen3.6:27b` で解析系 completion を実行 |
+| `local_llm_qwen3_30b_a3b` | ローカル LLM 実験用 | `qwen3:30b-a3b` で解析系 completion を実行 |
+| `local_llm_gemma4_26b` | ローカル LLM 実験用 | `gemma4:26b-a4b-it-qat` で解析系 completion を実行 |
+| `local_llm_llama31_8b` | ローカル LLM 実験用 | `llama3.1-8b-hf` で解析系 completion を実行 |
 
 ## インデックス作成例
 
@@ -26,12 +32,18 @@
 | `legacy` | `Set-Location graphrag_quickstart\profiles\legacy; graphrag index --root .` |
 | `prompt_tuning_test_nano` | `Set-Location graphrag_quickstart\profiles\prompt_tuning_test_nano; graphrag index --root .` |
 | `prompt_tuning_test_gpt54_mini` | `Set-Location graphrag_quickstart\profiles\prompt_tuning_test_gpt54_mini; graphrag index --root .` |
+| `local_llm_gpt_oss_20b` | `Set-Location graphrag_quickstart\profiles\local_llm_gpt_oss_20b; graphrag index --root .` |
+| `local_llm_qwen36_27b` | `Set-Location graphrag_quickstart\profiles\local_llm_qwen36_27b; graphrag index --root .` |
+| `local_llm_qwen3_30b_a3b` | `Set-Location graphrag_quickstart\profiles\local_llm_qwen3_30b_a3b; graphrag index --root .` |
+| `local_llm_gemma4_26b` | `Set-Location graphrag_quickstart\profiles\local_llm_gemma4_26b; graphrag index --root .` |
+
 
 ## 共通の前提
 
 - どの profile も共有コーパスは `../../input` を使う
 - まず profile を複製し、必要な `settings.yaml` と `prompts/` を調整する
 - profile ごとの細部は、それぞれの配下にある README を参照する
+- `local_llm_*` は `.env` に Azure OpenAI 用 `GRAPHRAG_API_KEY` とローカル LLM 用 `LOCAL_LLM_API_KEY` の両方が必要
 
 ## 補助スクリプト
 
@@ -82,3 +94,8 @@ python scripts\run_query_matrix.py report graphrag_quickstart\profiles\query_run
 - `legacy/README.md`
 - `prompt_tuning_test_nano/README.md`
 - `prompt_tuning_test_gpt54_mini/README.md`
+- `local_llm_ollama/README.md`
+- `local_llm_gpt_oss_20b/README.md`
+- `local_llm_qwen36_27b/README.md`
+- `local_llm_qwen3_30b_a3b/README.md`
+- `local_llm_gemma4_26b/README.md`

@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../VScodeFile/Local-LLM-Research"
+		}
+	],
+    "settings": {
+        "debug.internalConsoleOptions": "neverOpen",
+        "python.defaultInterpreterPath": "${workspaceFolder:graphrag}/graphrag_quickstart/.venv/Scripts/python.exe",
+        "python.terminal.activateEnvironment": true,
+        "python.languageServer": "Pylance"
+    }
+}

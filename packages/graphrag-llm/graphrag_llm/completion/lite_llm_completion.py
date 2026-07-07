@@ -6,9 +6,11 @@
 from collections.abc import AsyncIterator, Iterator
 from typing import TYPE_CHECKING, Any, Unpack
 
+import httpx
 import litellm
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from litellm import ModelResponse  # type: ignore
+from openai import AsyncOpenAI, OpenAI
 
 from graphrag_llm.completion.completion import LLMCompletion
 from graphrag_llm.config.types import AuthMethod
@@ -281,11 +283,27 @@ def _create_base_completions(
         "api_version": model_config.api_version,
         **model_config.call_args,
     }
+    sync_base_args = dict(base_args)
+    async_base_args = dict(base_args)
+
+    if model_provider == "openai" and model_config.call_args.get("ssl_verify") is False:
+        sync_base_args["client"] = OpenAI(
+            api_key=model_config.api_key,
+            base_url=model_config.api_base,
+            http_client=httpx.Client(verify=False),
+        )
+        async_base_args["client"] = AsyncOpenAI(
+            api_key=model_config.api_key,
+            base_url=model_config.api_base,
+            http_client=httpx.AsyncClient(verify=False),
+        )
 
     if model_config.auth_method == AuthMethod.AzureManagedIdentity:
-        base_args["azure_ad_token_provider"] = get_bearer_token_provider(
+        token_provider = get_bearer_token_provider(
             DefaultAzureCredential(), azure_cognitive_services_audience
         )
+        sync_base_args["azure_ad_token_provider"] = token_provider
+        async_base_args["azure_ad_token_provider"] = token_provider
 
     def _base_completion(
         **kwargs: Any,
@@ -293,7 +311,7 @@ def _create_base_completions(
         kwargs.pop("metrics", None)
         mock_response: str | None = kwargs.pop("mock_response", None)
         json_object: bool | None = kwargs.pop("response_format_json_object", None)
-        new_args: dict[str, Any] = {**base_args, **kwargs}
+        new_args: dict[str, Any] = {**sync_base_args, **kwargs}
 
         if model_config.mock_responses and mock_response is not None:
             new_args["mock_response"] = mock_response
@@ -324,7 +342,7 @@ def _create_base_completions(
         kwargs.pop("metrics", None)
         mock_response: str | None = kwargs.pop("mock_response", None)
         json_object: bool | None = kwargs.pop("response_format_json_object", None)
-        new_args: dict[str, Any] = {**base_args, **kwargs}
+        new_args: dict[str, Any] = {**async_base_args, **kwargs}
 
         if model_config.mock_responses and mock_response is not None:
             new_args["mock_response"] = mock_response

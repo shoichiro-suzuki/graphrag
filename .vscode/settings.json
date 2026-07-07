@@ -2,7 +2,7 @@
   "editor.formatOnSave": false,
   "explorer.fileNesting.enabled": true,
   "debug.internalConsoleOptions": "neverOpen",
-  "python.defaultInterpreterPath": "${workspaceRoot}/.venv/bin/python",
+  "python.defaultInterpreterPath": "${workspaceFolder}/graphrag_quickstart/.venv/Scripts/python.exe",
   "python.languageServer": "Pylance",
   "cSpell.customDictionaries": {
     "project-words": {

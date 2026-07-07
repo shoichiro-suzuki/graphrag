@@ -47,4 +47,7 @@ class ConsoleWorkflowCallbacks(NoopWorkflowCallbacks):
         total = progress.total_items or 1
         percent = round((complete / total) * 100)
         start = f"  {complete} / {total} "
-        print(f"{start:{'.'}<{percent}}", flush=True, end="\r")
+        try:
+            print(f"{start:{'.'}<{percent}}", flush=True, end="\r")
+        except OSError:
+            pass
